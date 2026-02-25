@@ -145,43 +145,37 @@ const faceStatus = document.getElementById('face-status');
 async function loadModels() {
     try {
         const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
-        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        // Memuat SSDMobilenet (lebih akurat dari TinyFace)
+        await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
         modelsLoaded = true;
         faceStatus.innerText = "AI Siap. Pilih Tipe Absen.";
     } catch (e) {
         faceStatus.innerText = "Gagal memuat AI.";
     }
 }
-loadModels();
-
-setInterval(() => { 
-    document.getElementById('clock').innerText = new Date().toLocaleTimeString('id-ID'); 
-}, 1000);
 
 async function detectFace() {
     if (!modelsLoaded || !video.srcObject) return null;
     
-    // Konfigurasi yang lebih 'ringan' tapi tetap akurat
-    const options = new faceapi.TinyFaceDetectorOptions({ 
-        inputSize: 320,      // Lebih ringan, mengurangi lag di HP
-        scoreThreshold: 0.1  // Lebih peka terhadap wajah di kondisi cahaya minim
-    });
+    // Menggunakan SSD Mobilenet dengan sensitivitas tinggi
+    const options = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.3 });
 
     const detection = await faceapi.detectSingleFace(video, options);
     
     if (detection) {
-        // Cek jika skor sudah mencukupi threshold baru
-        if (detection.score > 0.1) {
-            faceStatus.innerText = "Wajah Terdeteksi ✓";
-            faceStatus.style.color = "#00ff88";
-            
-            // Aktifkan tombol ambil absen hanya jika tipe absen sudah dipilih
-            if (statusAbsen) {
-                document.getElementById('btnAmbil').disabled = false;
-            }
-            return detection;
+        faceStatus.innerText = "Wajah Terdeteksi ✓";
+        faceStatus.style.color = "#00ff88";
+        if (statusAbsen) {
+            document.getElementById('btnAmbil').disabled = false;
         }
+        return detection;
     }
+    
+    faceStatus.innerText = "Cari Posisi Terang / Dekatkan Wajah";
+    faceStatus.style.color = "#ffeb3b";
+    document.getElementById('btnAmbil').disabled = true;
+    return null;
+}
     
     // Status jika belum pas
     faceStatus.innerText = "Dekatkan Wajah ke Kamera";
@@ -295,6 +289,7 @@ function logoutKeLogin() { location.reload(); }
 </script>
 </body>
 </html>
+
 
 
 
