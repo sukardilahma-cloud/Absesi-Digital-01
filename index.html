@@ -160,20 +160,34 @@ setInterval(() => {
 
 async function detectFace() {
     if (!modelsLoaded || !video.srcObject) return null;
-    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.1 });
+    
+    // Konfigurasi yang lebih 'ringan' tapi tetap akurat
+    const options = new faceapi.TinyFaceDetectorOptions({ 
+        inputSize: 224,      // Lebih ringan, mengurangi lag di HP
+        scoreThreshold: 0.3  // Lebih peka terhadap wajah di kondisi cahaya minim
+    });
+
     const detection = await faceapi.detectSingleFace(video, options);
     
     if (detection) {
-        faceStatus.innerText = "Wajah Terdeteksi ✓";
-        faceStatus.style.color = "#00ff88";
-        if (statusAbsen) document.getElementById('btnAmbil').disabled = false;
-        return detection;
-    } else {
-        faceStatus.innerText = "Wajah Tidak Terlihat";
-        faceStatus.style.color = "#ffeb3b";
-        document.getElementById('btnAmbil').disabled = true;
-        return null;
+        // Cek jika skor sudah mencukupi threshold baru
+        if (detection.score > 0.3) {
+            faceStatus.innerText = "Wajah Terdeteksi ✓";
+            faceStatus.style.color = "#00ff88";
+            
+            // Aktifkan tombol ambil absen hanya jika tipe absen sudah dipilih
+            if (statusAbsen) {
+                document.getElementById('btnAmbil').disabled = false;
+            }
+            return detection;
+        }
     }
+    
+    // Status jika belum pas
+    faceStatus.innerText = "Dekatkan Wajah ke Kamera";
+    faceStatus.style.color = "#ffeb3b";
+    document.getElementById('btnAmbil').disabled = true;
+    return null;
 }
 
 setInterval(() => { if (userData) detectFace(); }, 1000);
@@ -281,5 +295,6 @@ function logoutKeLogin() { location.reload(); }
 </script>
 </body>
 </html>
+
 
 
