@@ -160,7 +160,7 @@ setInterval(() => {
 
 async function detectFace() {
     if (!modelsLoaded || !video.srcObject) return null;
-    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.5 });
+    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.4 });
     const detection = await faceapi.detectSingleFace(video, options);
     
     if (detection) {
@@ -281,3 +281,4 @@ function logoutKeLogin() { location.reload(); }
 </script>
 </body>
 </html>
+
