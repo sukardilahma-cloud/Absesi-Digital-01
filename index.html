@@ -137,32 +137,39 @@ function prosesLogin() {
     if (!nip) return alert("Masukkan ID/NIP!");
     
     const btn = document.getElementById('btnLogin');
-    btn.disabled = true; btn.innerText = "⏳ Mengecek...";
+    btn.disabled = true; 
+    btn.innerText = "⏳ Mengecek...";
 
-    google.script.run.withSuccessHandler(res => {
-        if (res.success) {
-            userData = res;
-            document.getElementById('displayNama').innerText = res.nama;
-            document.getElementById('displayJabatan').innerText = res.jabatan;
-            document.getElementById('loginBox').style.display = 'none';
-            document.getElementById('mainApp').style.display = 'block';
-            initCameraAndGPS();
-            
-            if (!res.bolehAbsen) {
-                document.getElementById('btnDatang').disabled = true;
-                document.getElementById('btnPulang').disabled = true;
-                document.getElementById('pesan').innerHTML = `<div style="color:#ffeb3b; font-size:0.75rem;">⚠️ ${res.pesanWaktu}</div>`;
-            } else {
+    // Tambahkan Failure Handler untuk menangkap error server
+    google.script.run
+        .withSuccessHandler(res => {
+            if (res.success) {
+                userData = res;
+                document.getElementById('displayNama').innerText = res.nama;
+                document.getElementById('displayJabatan').innerText = res.jabatan;
+                document.getElementById('loginBox').style.display = 'none';
+                document.getElementById('mainApp').style.display = 'block';
+                initCameraAndGPS();
+                
                 document.getElementById('btnDatang').disabled = res.sudahDatang;
                 document.getElementById('btnPulang').disabled = res.sudahPulang;
+                
+                if (!res.bolehAbsen) {
+                    document.getElementById('pesan').innerHTML = `<div style="color:#ffeb3b;">⚠️ ${res.pesanWaktu}</div>`;
+                }
+            } else {
+                alert(res.message);
+                btn.disabled = false; 
+                btn.innerText = "MASUK";
             }
-        } else {
-            alert(res.message);
-            btn.disabled = false; btn.innerText = "MASUK";
-        }
-    }).validasiID(nip);
+        })
+        .withFailureHandler(err => {
+            alert("Terjadi kesalahan sistem: " + err);
+            btn.disabled = false; 
+            btn.innerText = "MASUK";
+        })
+        .validasiID(nip); // Pastikan nama fungsi ini sama dengan di Kode.gs
 }
-
 async function initCameraAndGPS() {
     try { 
         const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -230,3 +237,4 @@ function logoutKeLogin() { location.reload(); }
 </script>
 </body>
 </html>
+
