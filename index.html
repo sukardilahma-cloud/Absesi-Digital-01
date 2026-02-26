@@ -23,7 +23,6 @@
         
         #clock { font-size: 1.8rem; font-weight: 600; color: #00ff88; margin: 5px 0 15px 0; }
 
-        /* Login & Info Card */
         .card {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
@@ -43,11 +42,10 @@
             border-left: 5px solid #2196f3;
         }
         
-        /* Kamera Tetap (Persegi) */
         .camera-box {
             position: relative;
             width: 100%; 
-            aspect-ratio: 3/4; /* Proporsi kamera HP portrait */
+            aspect-ratio: 3/4;
             max-height: 350px;
             margin: 0 auto 15px;
             border: 3px solid #fff;
@@ -57,7 +55,22 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
 
-        #webcam { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        /* Filter kontras membantu AI melihat fitur wajah lebih tajam */
+        #webcam { 
+            width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); 
+            filter: brightness(1.1) contrast(1.1);
+        }
+
+        /* Garis panduan Oval */
+        .face-guide {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 65%; height: 70%;
+            border: 2px dashed rgba(255,255,255,0.5);
+            border-radius: 50%;
+            pointer-events: none;
+        }
 
         #face-status { 
             position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
@@ -65,7 +78,6 @@
             font-size: 0.65rem; color: #ffeb3b; z-index: 10;
         }
 
-        /* Buttons */
         .button-group { display: flex; gap: 8px; margin-bottom: 10px; }
         .btn { 
             border: none; border-radius: 10px; font-weight: 600; font-family: inherit;
@@ -79,9 +91,6 @@
         
         .btn.active-status { opacity: 1; border: 2px solid white; transform: scale(1.02); }
         .btn:disabled { background: #666 !important; opacity: 0.3 !important; }
-
-        .coord-row { display: flex; gap: 5px; margin-top: 10px; opacity: 0.7; font-size: 0.6rem; }
-        .coord-row div { flex: 1; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 6px; }
 
         #pesan { font-size: 0.8rem; margin: 10px 0; min-height: 1.2em; font-weight: 600; }
         .nav-btn { background: white; color: #1e3c72; width: 100%; padding: 12px; border: none; border-radius: 10px; font-weight: 600; font-size: 0.8rem; margin-top: 10px; }
@@ -108,7 +117,8 @@
         </div>
 
         <div class="camera-box">
-            <div id="face-status">Menunggu Kamera...</div>
+            <div id="face-status">Memuat AI...</div>
+            <div class="face-guide"></div>
             <video id="webcam" autoplay playsinline muted></video>
             <canvas id="canvas" style="display:none;"></canvas>
         </div>
@@ -119,13 +129,7 @@
         </div>
 
         <button onclick="prosesAmbilAbsen()" id="btnAmbil" class="btn btn-ambil" disabled>📸 AMBIL ABSEN</button>
-        
         <div id="pesan"></div>
-
-        <div class="coord-row">
-            <div>Lat: <span id="lat-val">0</span></div>
-            <div>Lon: <span id="lon-val">0</span></div>
-        </div>
 
         <button onclick="bukaDashboard()" class="nav-btn">🏠 MONITORING KEHADIRAN</button>
         <button onclick="logoutKeLogin()" class="logout-btn">Keluar / Ganti Akun</button>
@@ -133,7 +137,6 @@
 </div>
 
 <script>
-// SCRIPT LOGIC (Tetap sama dengan yang Anda miliki sebelumnya)
 const SCRIPT_URL = "https://script.google.com/a/guru.sma.belajar.id/macros/s/AKfycbyOWkkDREx-TQj3v7hycUFkhweT2VRqIphq6KxV-J4dYmK0n3zQHvPGVsLVaeTWXpNB/exec";
 
 let currentLat = 0, currentLon = 0, userData = null, statusAbsen = ""; 
@@ -145,7 +148,7 @@ const faceStatus = document.getElementById('face-status');
 async function loadModels() {
     try {
         const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
-        // Memuat SSDMobilenet (lebih akurat dari TinyFace)
+        // Menggunakan SSDMobilenetv1 untuk akurasi lebih baik di HP
         await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
         modelsLoaded = true;
         faceStatus.innerText = "AI Siap. Pilih Tipe Absen.";
@@ -153,13 +156,17 @@ async function loadModels() {
         faceStatus.innerText = "Gagal memuat AI.";
     }
 }
+loadModels();
+
+setInterval(() => { 
+    document.getElementById('clock').innerText = new Date().toLocaleTimeString('id-ID'); 
+}, 1000);
 
 async function detectFace() {
     if (!modelsLoaded || !video.srcObject) return null;
     
-    // Menggunakan SSD Mobilenet dengan sensitivitas tinggi
-    const options = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.3 });
-
+    // Threshold 0.35 cukup sensitif tapi akurat
+    const options = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.35 });
     const detection = await faceapi.detectSingleFace(video, options);
     
     if (detection) {
@@ -171,20 +178,14 @@ async function detectFace() {
         return detection;
     }
     
-    faceStatus.innerText = "Cari Posisi Terang / Dekatkan Wajah";
-    faceStatus.style.color = "#ffeb3b";
-    document.getElementById('btnAmbil').disabled = true;
-    return null;
-}
-    
-    // Status jika belum pas
-    faceStatus.innerText = "Dekatkan Wajah ke Kamera";
+    faceStatus.innerText = "Dekatkan Wajah ke Oval";
     faceStatus.style.color = "#ffeb3b";
     document.getElementById('btnAmbil').disabled = true;
     return null;
 }
 
-setInterval(() => { if (userData) detectFace(); }, 1000);
+// Deteksi berjalan hanya jika user sudah login
+setInterval(() => { if (userData) detectFace(); }, 800);
 
 async function prosesLogin() {
     const nip = document.getElementById('nipInput').value.trim();
@@ -223,15 +224,15 @@ async function prosesLogin() {
 
 async function initCameraAndGPS() {
     try { 
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } } 
+        });
         video.srcObject = stream;
-    } catch (err) { alert("Kamera diblokir!"); }
+    } catch (err) { alert("Kamera diblokir! Izinkan akses kamera."); }
 
     if (navigator.geolocation) {
         navigator.geolocation.watchPosition(p => {
             currentLat = p.coords.latitude; currentLon = p.coords.longitude;
-            document.getElementById('lat-val').innerText = currentLat.toFixed(5);
-            document.getElementById('lon-val').innerText = currentLon.toFixed(5);
         }, null, { enableHighAccuracy: true });
     }
 }
@@ -250,7 +251,11 @@ async function prosesAmbilAbsen() {
     document.getElementById('pesan').innerText = "⏳ Memproses...";
 
     const detection = await detectFace();
-    if (!detection) return (btn.disabled = false);
+    if (!detection) {
+        alert("Wajah hilang! Posisikan kembali.");
+        btn.disabled = false;
+        return;
+    }
 
     canvas.width = video.videoWidth; canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
@@ -261,7 +266,8 @@ async function prosesAmbilAbsen() {
     const payload = { 
         id: userData.id, nama: userData.nama, gtk: userData.jabatan,
         lat: currentLat, lng: currentLon, tipe: statusAbsen,
-        image: canvas.toDataURL('image/jpeg', 0.5)
+        faceMatch: detection.score, // Mengirim skor ke backend
+        image: canvas.toDataURL('image/jpeg', 0.6)
     };
 
     try {
@@ -277,7 +283,7 @@ async function prosesAmbilAbsen() {
             document.getElementById('pesan').innerText = res.message;
             btn.disabled = false;
         }
-    } catch (e) { alert("Error!"); btn.disabled = false; }
+    } catch (e) { alert("Error Server!"); btn.disabled = false; }
 }
 
 function bukaDashboard() {
@@ -289,8 +295,3 @@ function logoutKeLogin() { location.reload(); }
 </script>
 </body>
 </html>
-
-
-
-
-
