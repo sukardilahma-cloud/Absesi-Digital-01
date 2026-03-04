@@ -510,45 +510,6 @@
       alert(res);
     }
 
-    function saveSystemSettings(data) {
-  try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID); 
-    const sheet = ss.getSheetByName("Settings");
-    const values = sheet.getDataRange().getValues();
-
-    // Mapping: Kiri adalah "Key" di Sheet, Kanan adalah "ID" dari HTML GitHub
-    const mapping = {
-      "jamTerlambatGuru": data.jamTerlambatGuru,
-      "jamTerlambatTendik": data.jamTerlambatTendik,
-      "jamPulangMinimal": data.jamPulangMinimal,
-      "radiusMeter": data.radiusMeter,
-      "admin_user": data.adminUser, // disesuaikan dari adminUser (HTML) ke admin_user (Sheet)
-      "jamAbsenMulai": data.abMulai,
-      "jamAbsenSelesai": data.abSelesai,
-      "hariKerja": data.hariKerja
-    };
-
-    // Update password hanya jika diisi (tidak kosong)
-    if (data.adminPass && data.adminPass.trim() !== "") {
-      mapping["admin_pass"] = data.adminPass;
-    }
-
-    let updatedCount = 0;
-    for (let i = 0; i < values.length; i++) {
-      let keyInSheet = String(values[i][0]).trim(); 
-      if (mapping.hasOwnProperty(keyInSheet)) {
-        sheet.getRange(i + 1, 2)
-             .setNumberFormat("@") // Paksa jadi Plain Text agar format jam tidak berubah
-             .setValue(mapping[keyInSheet]);
-        updatedCount++;
-      }
-    }
-    return "✅ " + updatedCount + " Pengaturan berhasil diperbarui!";
-  } catch (e) {
-    return "❌ Error: " + e.toString();
-  }
-}
-
     async function simpanSettings() {
   const payload = {
     action: 'saveSystemSettings',
