@@ -151,6 +151,44 @@
 
     <div id="view-rekap" style="display:none">
       <h1>Rekap Absensi</h1>
+      <div style="display:flex; gap:10px;">
+      
+      <div class="card-box" style="margin-top:20px; border-top: 4px solid var(--warning);">
+  <h3 style="color: var(--text-dark); margin-bottom: 10px;">📦 Arsip & Bersihkan Data</h3>
+  <p style="font-size: 0.8rem; color: var(--text-gray); margin-bottom: 15px;">
+    Gunakan fitur ini untuk memindahkan data absensi lama ke <b>File Spreadsheet Baru</b> agar sistem utama tetap ringan.
+  </p>
+  
+  <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; background: #fffbeb; padding: 15px; border-radius: 8px; border: 1px solid #fef3c7;">
+    <div>
+      <label style="font-size: 0.75rem; font-weight: 700; color: #92400e;">BULAN</label>
+      <select id="arsipBulan" style="margin-top:5px; width: 150px;">
+        <option value="01">Januari</option>
+        <option value="02">Februari</option>
+        <option value="03">Maret</option>
+        <option value="04">April</option>
+        <option value="05">Mei</option>
+        <option value="06">Juni</option>
+        <option value="07">Juli</option>
+        <option value="08">Agustus</option>
+        <option value="09">September</option>
+        <option value="10">Oktober</option>
+        <option value="11">November</option>
+        <option value="12">Desember</option>
+      </select>
+    </div>
+    
+    <div>
+      <label style="font-size: 0.75rem; font-weight: 700; color: #92400e;">TAHUN</label>
+      <input type="number" id="arsipTahun" value="2026" style="margin-top:5px; width: 100px;">
+    </div>
+
+    <button class="btn" style="background: var(--warning); color: white; font-weight: 600;" onclick="jalankanProsesArsip()">
+      🚀 Pindahkan ke File Arsip
+    </button>
+    
+  </div>
+</div>
       <div class="card-box" style="margin-top:20px">
         <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
           <input type="date" id="filterTglMulai" class="btn" style="border:1px solid #ddd">
@@ -635,6 +673,58 @@
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+}
+    async function jalankanProsesArsip() {
+  const bln = document.getElementById('arsipBulan').value;
+  const thn = document.getElementById('arsipTahun').value;
+  const sel = document.getElementById('arsipBulan');
+  const namaBulan = sel.options[sel.selectedIndex].text;
+
+  // Validasi Konfirmasi
+  const konfirmasi = confirm(
+    "⚠️ PERINGATAN KERAS!\n\n" +
+    "Data absensi bulan " + namaBulan + " " + thn + " akan DIPINDAHKAN ke file baru di Google Drive.\n" +
+    "Data di tabel utama akan DIHAPUS agar sistem tetap ringan.\n\n" +
+    "Apakah Anda yakin?"
+  );
+
+  if (!konfirmasi) return;
+
+  // Loading State
+  const btn = document.getElementById('btnProsesArsip'); // Pastikan ID tombol sesuai
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = "⏳ Sedang Memproses...";
+
+  try {
+    // Menggunakan fetch/apiCall untuk mengirim data ke Google Apps Script
+    const response = await fetch(SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "arsipDataAbsensi",
+        bulan: bln,
+        tahun: thn
+      })
+    });
+
+    const res = await response.json(); // Pastikan GAS mengembalikan JSON
+
+    if (res.success) {
+        alert("✅ " + res.message);
+    } else {
+        alert("❌ " + res.message);
+    }
+
+    // Refresh UI
+    if (typeof loadRekap === "function") loadRekap('custom');
+    if (typeof loadDashboard === "function") loadDashboard();
+
+  } catch (err) {
+    alert("Terjadi kesalahan koneksi: " + err);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
 }
   </script>
 </body>
