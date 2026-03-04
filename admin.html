@@ -164,21 +164,36 @@
     </div>
 
     <div id="view-settings" style="display:none">
-      <h1>Pengaturan Sistem</h1>
-      <div class="card-box" style="max-width:600px; margin: 20px auto;">
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:15px;">
-          <div><label>Jam Masuk Guru</label><input type="time" id="setJamMasukGuru" style="width:100%; padding:8px;"></div>
-          <div><label>Jam Masuk Tendik</label><input type="time" id="setJamMasukTendik" style="width:100%; padding:8px;"></div>
-        </div>
-        <div style="margin-bottom:15px;">
-          <label>Radius Absen (Meter)</label>
-          <input type="number" id="setRadius" style="width:100%; padding:8px;">
-        </div>
-        <button class="btn btn-primary" onclick="simpanSettings()" style="width:100%">💾 Simpan Perubahan</button>
-      </div>
+  <h1>Pengaturan Sistem</h1>
+  <div class="card-box" style="max-width:600px; margin: 20px auto;">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:15px;">
+      <div><label>Jam Masuk Guru</label><input type="time" id="setJamMasukGuru" style="width:100%; padding:8px;"></div>
+      <div><label>Jam Masuk Tendik</label><input type="time" id="setJamMasukTendik" style="width:100%; padding:8px;"></div>
     </div>
-
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:15px;">
+      <div><label>Jam Buka Absen</label><input type="time" id="setAbMulai" style="width:100%; padding:8px;"></div>
+      <div><label>Jam Tutup Absen</label><input type="time" id="setAbSelesai" style="width:100%; padding:8px;"></div>
+    </div>
+    <div style="margin-bottom:15px;">
+      <label>Jam Pulang Minimal</label>
+      <input type="time" id="setJamPulang" style="width:100%; padding:8px;">
+    </div>
+    <div style="margin-bottom:15px;">
+      <label>Radius Absen (Meter)</label>
+      <input type="number" id="setRadius" style="width:100%; padding:8px;">
+    </div>
+    <hr style="margin:20px 0; opacity:0.2;">
+    <div style="margin-bottom:15px;">
+      <label>Admin Username</label>
+      <input type="text" id="adminUserSet" style="width:100%; padding:8px;">
+    </div>
+    <div style="margin-bottom:15px;">
+      <label>Admin Password Baru (Kosongkan jika tidak ganti)</label>
+      <input type="password" id="adminPassSet" style="width:100%; padding:8px;">
+    </div>
+    <button class="btn btn-primary" onclick="simpanSettings()" style="width:100%">💾 Simpan Perubahan</button>
   </div>
+</div>
 
   <div class="sidebar-overlay" id="modalAddGTK" style="display:none; align-items:center; justify-content:center; z-index:2000;">
     <div class="card-box" style="width:90%; max-width:400px;">
@@ -392,12 +407,18 @@
     function exportPDF() { window.print(); }
 
     /* --- SETTINGS --- */
-    async function loadSettings() {
-      const s = await apiGet({ action: 'getSystemSettings' });
-      document.getElementById('setJamMasukGuru').value = s.jamTerlambatGuru;
-      document.getElementById('setJamMasukTendik').value = s.jamTerlambatTendik;
-      document.getElementById('setRadius').value = s.radiusMeter;
-    }
+   async function loadSettings() {
+  const s = await apiGet({ action: 'getSystemSettings' });
+  if(s) {
+    document.getElementById('setJamMasukGuru').value = s.jamTerlambatGuru || "";
+    document.getElementById('setJamMasukTendik').value = s.jamTerlambatTendik || "";
+    document.getElementById('setJamPulang').value = s.jamPulangMinimal || "";
+    document.getElementById('setRadius').value = s.radiusMeter || 100;
+    document.getElementById('adminUserSet').value = s.admin_user || "";
+    document.getElementById('setAbMulai').value = s.jamAbsenMulai || "";
+    document.getElementById('setAbSelesai').value = s.jamAbsenSelesai || "";
+  }
+}
 
     async function simpanSettings() {
       const payload = {
