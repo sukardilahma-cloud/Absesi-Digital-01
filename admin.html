@@ -500,17 +500,6 @@
 }
 
     async function simpanSettings() {
-      const payload = {
-        action: 'saveSystemSettings',
-        jamTerlambatGuru: document.getElementById('setJamMasukGuru').value,
-        jamTerlambatTendik: document.getElementById('setJamMasukTendik').value,
-        radiusMeter: document.getElementById('setRadius').value
-      };
-      const res = await apiCall(payload);
-      alert(res);
-    }
-
-    async function simpanSettings() {
   const payload = {
     action: 'saveSystemSettings',
     jamTerlambatGuru: document.getElementById('setJamMasukGuru').value,
